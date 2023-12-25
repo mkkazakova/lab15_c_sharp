@@ -1,0 +1,77 @@
+public interface IObserver
+{
+    void Update(List<string> newFiles, List<string> delFiles);
+}
+public class ToConsole : IObserver
+{
+    public void Update(List<string> newFiles, List<string> delFiles)
+    {Console.WriteLine($"\nИзменения в папке:");
+        if (newFiles.Any()){Console.WriteLine($"    Появились файлы: {string.Join(", ", newFiles)}");}
+        if (delFiles.Any()){Console.WriteLine($"    Пропали файлы:   {string.Join(", ", delFiles)}");}}
+}
+
+interface IObservable
+{
+    void RegisterObserver(IObserver o);
+    void RemoveObserver(IObserver o);
+    void NotifyObservers();
+}
+
+class FromDir: IObservable
+{
+    List<IObserver> observers;
+    public FromDir()
+    {
+        observers = new List<IObserver>();
+        newFiles = new HashSet<string>();
+        delFiles = new HashSet<string>();
+    }
+    public void RegisterObserver(IObserver o)
+    {
+        observers.Add(o);
+    }
+
+    public void RemoveObserver(IObserver o)
+    {
+        observers.Remove(o);
+    }
+
+    public void NotifyObservers()
+    {
+        foreach (IObserver o in observers)
+        {
+            o.Update(newFiles,delFiles);
+        }
+    }
+
+    private HashSet<string> GetFilesInDirectory()
+    {
+        return new HashSet<string>(Directory.GetFiles(dir).Select(Path.GetFileName));
+    }
+
+    private void CheckDirectory(List<string> files)
+    {
+        var curFiles = GetFilesInDirectory();
+        var newFiles = curFiles.Except(files).ToList();
+        var delFiles = files.Except(curFiles).ToList();
+
+        if (newFiles.Any() || delFiles.Any())
+        { NotifyObservers(); files = curFiles; }
+    }    
+}
+
+class lab151
+{
+    static void Main(string[] args)
+    {
+        string myDir = "c:/1";
+
+        FromDir watcher = new FromDir(myDir);
+
+        var observer = new DirectoryObserver();
+        watcher.AddObserver(observer);
+
+        Console.WriteLine($"Watching directory: {myDir}");
+        Console.ReadLine();
+    }
+}
